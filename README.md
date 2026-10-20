@@ -170,6 +170,6 @@ Each saved bundle contains the model together with its exact feature list, so th
 - Multi-year data to capture full seasonality
 - A single model trained across houses instead of one model per house
 
-## Author
+## Group Member
 
-`ADD YOUR NAME / CONTACT HERE`
+`Azizullah Asad & Muhammad Yahya`
