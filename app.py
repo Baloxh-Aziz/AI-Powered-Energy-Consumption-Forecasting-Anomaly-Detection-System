@@ -35,7 +35,7 @@ def flag(df, k):
 
 meta = load_meta()
 
-st.title("⚡ Household Energy Forecasting & Anomaly Detection")
+st.title("⚡ AI-Powered Energy Consumption Forecasting & Anomaly Detection")
 st.caption("Pakistan REWDP dataset · Random Forest (delta) day-ahead forecast · "
            "robust (MAD) relative-residual anomaly detection")
 
