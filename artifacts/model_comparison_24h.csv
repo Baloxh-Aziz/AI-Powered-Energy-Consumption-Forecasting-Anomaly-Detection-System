@@ -1,0 +1,7 @@
+Model,MAE (kW),RMSE (kW),sMAPE (%),Skill vs naive-24h
+Seasonal naive (t-24h),0.411,0.6936,51.5871,0.0
+Seasonal naive (t-168h),0.5806,0.9372,64.7626,-0.4128
+RF (day-ahead),0.4284,0.6899,50.6926,-0.0425
+LightGBM (day-ahead),0.4446,0.7311,51.2526,-0.0818
+"RF (day-ahead, delta)",0.3908,0.6352,48.6014,0.049
+"LightGBM (day-ahead, delta)",0.4115,0.6732,50.1124,-0.0011

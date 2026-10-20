@@ -1,0 +1,10 @@
+Model,MAE (kW),RMSE (kW),sMAPE (%),Skill vs naive-24h
+Persistence (t-1h),0.2732,0.5066,28.4918,0.3354
+Seasonal naive (t-24h),0.411,0.6936,51.5871,0.0
+Seasonal naive (t-168h),0.5806,0.9372,64.7626,-0.4128
+Random Forest,0.3401,0.5945,41.1173,0.1725
+HistGradientBoosting,0.3727,0.6706,42.5263,0.0932
+LightGBM,0.3732,0.6713,42.8874,0.0921
+LightGBM (delta),0.3217,0.5632,39.0855,0.2174
+RF (delta),0.2937,0.4997,38.2417,0.2853
+LSTM (24h window),0.3573,0.5967,44.6685,0.1307
