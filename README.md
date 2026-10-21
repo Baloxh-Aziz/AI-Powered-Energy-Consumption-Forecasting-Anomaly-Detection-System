@@ -79,7 +79,7 @@ notebooks/             00 raw exploration, 01 cleaning & EDA, 02 features & base
                        03 LSTM, 04 anomaly detection, 05 multi-city study,
                        06 model export, 07 weather experiment, 08 MLflow experiment tracking
 ```
-The API lives in its own repository (`main.py`, `requirements.txt` and the saved model files).
+The API lives in its own [repository](https://github.com/Baloxh-Aziz/energy-api-project) .
 
 ## Run locally
 
