@@ -2,8 +2,8 @@
 
 An end-to-end project that cleans household smart-meter data, forecasts electricity usage, flags unusual consumption, and serves the results through an interactive dashboard and a prediction API.
 
-- **Live dashboard:** https://household-energy-forecasting-and-anomaly-detection.streamlit.app
-- **Prediction API (Swagger docs):** https://energy-api-project-d1d7b.containers.snapdeploy.app/docs
+- [Live dashboard](https://household-energy-forecasting-and-anomaly-detection.streamlit.app)
+- [Prediction API (Swagger docs)](https://energy-api-project-d1d7b.containers.snapdeploy.app/docs)
 
 ## Data
 
