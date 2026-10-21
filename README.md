@@ -11,7 +11,7 @@ REWDP (Residential Energy and Weather Data, Pakistan): minute-level smart-meter 
 
 The full dataset covers about 60 houses, each with 500k+ minute-level rows. Because of the heavy compute and memory load, 3 houses were selected from each city (18 houses in total) for modelling and evaluation.
 
-[Resourse_of_data](https://lei.lums.edu.pk/datasets/residential-energy-and-weather-data-pakistan.html)
+[Data source: REWDP (LUMS)](https://lei.lums.edu.pk/datasets/residential-energy-and-weather-data-pakistan.html)
 
 ## What the system does
 
