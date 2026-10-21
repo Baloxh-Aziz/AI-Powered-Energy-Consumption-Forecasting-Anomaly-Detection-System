@@ -7,8 +7,12 @@ An end-to-end project that cleans household smart-meter data, forecasts electric
 
 ## Data
 
-REWDP (Residential Energy and Weather Data, Pakistan): minute-level smart-meter readings for **18 houses in 6 cities** (Karachi, Lahore, Peshawar, Multan, Skardu, Islamabad), about one year (Sept 2023 – Aug 2024), plus an hourly weather dataset for the same cities.
+REWDP (Residential Energy and Weather Data, Pakistan): minute-level smart-meter readings for 18 houses in 6 cities (Karachi, Lahore, Peshawar, Multan, Skardu, Islamabad), about one year (Sept 2023 – Aug 2024), plus an hourly weather dataset for the same cities.
+
+The full dataset covers about 60 houses, each with 500k+ minute-level rows. Because of the heavy compute and memory load, 3 houses were selected from each city (18 houses in total) for modelling and evaluation.
+
 [Resourse_of_data](https://lei.lums.edu.pk/datasets/residential-energy-and-weather-data-pakistan.html)
+
 ## What the system does
 
 1. **Data cleaning & EDA** – repairs repeated timestamps, treats long runs of zeros as sensor downtime, resamples to hourly values, keeps an `observed` flag so filled hours are never used as targets, and explores daily, weekly and seasonal patterns.
@@ -66,7 +70,9 @@ Key findings:
 
 ## Future work
 
-Multi-year data with calendar features (school terms, Ramadan, Eid, public holidays), change-point detection (e.g. CUSUM), rolling cross-validation, model monitoring and scheduled retraining, forecast-weather inputs.
+Live smart-meter integration: connect real meters (or an IoT gateway) so the API receives readings in real time, forecasts the next hours and raises anomaly alerts automatically.
+Extend the system to all ~60 houses with scalable (batch or distributed) processing.
+multi-year data with calendar features (school terms, Ramadan, Eid, public holidays), change-point detection (e.g. CUSUM), rolling cross-validation, model monitoring and scheduled retraining, forecast-weather inputs.
 
 ## Repository structure
 
