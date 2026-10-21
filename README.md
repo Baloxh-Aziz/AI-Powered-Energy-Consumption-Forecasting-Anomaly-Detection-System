@@ -101,8 +101,6 @@ uvicorn main:app --reload      # then open http://127.0.0.1:8000/docs
 Python, Pandas, NumPy, Matplotlib, Scikit-learn, XGBoost, LightGBM, TensorFlow/Keras, MLflow, FastAPI, Streamlit, Plotly, GitHub.
 
 
-## Author
-
-Hacker (GitHub: [Baloxh-Aziz](https://github.com/Baloxh-Aziz)), BS Data Science, DUET Karachi. Built as the final project of the SMIT course.## Group Member
-
+## Group Member
 `Azizullah Asad & Muhammad Yahya`
+Built as the final project of the SMIT course.
