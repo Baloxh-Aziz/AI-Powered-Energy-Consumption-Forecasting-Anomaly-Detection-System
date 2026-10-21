@@ -1,175 +1,108 @@
-# ⚡ AI-Powered Energy Consumption Forecasting & Anomaly Detection System
+# ⚡ # AI-Powered Energy Consumption Forecasting & Anomaly Detection System
 
-Forecasting household electricity usage and detecting abnormal consumption from smart-meter data collected in
-**18 houses across 6 Pakistani cities**: Karachi, Lahore, Peshawar, Multan, Skardu and Islamabad.
+An end-to-end project that cleans household smart-meter data, forecasts electricity usage, flags unusual consumption, and serves the results through an interactive dashboard and a prediction API.
 
-The project covers the full pipeline: data cleaning, feature engineering, baselines, machine-learning and
-deep-learning forecasters, anomaly detection, a multi-city comparison, and an interactive Streamlit dashboard.
+- **Live dashboard:** https://household-energy-forecasting-and-anomaly-detection.streamlit.app
+- **Prediction API (Swagger docs):** https://energy-api-project-d1d7b.containers.snapdeploy.app/docs
 
----
+## Data
 
-## Table of contents
-1. [Dataset](#dataset)
-2. [Project pipeline](#project-pipeline)
-3. [Methodology](#methodology)
-4. [Key findings](#key-findings)
-5. [Dashboard](#dashboard)
-6. [Repository structure](#repository-structure)
-7. [How to run](#how-to-run)
-8. [Limitations](#limitations)
-9. [Future work](#future-work)
+REWDP (Residential Energy and Weather Data, Pakistan): minute-level smart-meter readings for **18 houses in 6 cities** (Karachi, Lahore, Peshawar, Multan, Skardu, Islamabad), about one year (Sept 2023 – Aug 2024), plus an hourly weather dataset for the same cities.
+[Resourse_of_data](https://lei.lums.edu.pk/datasets/residential-energy-and-weather-data-pakistan.html)
+## What the system does
 
----
+1. **Data cleaning & EDA** – repairs repeated timestamps, treats long runs of zeros as sensor downtime, resamples to hourly values, keeps an `observed` flag so filled hours are never used as targets, and explores daily, weekly and seasonal patterns.
+2. **Forecasting** – Random Forest models for **1 hour ahead** and **day ahead**. Features: hour, weekday, weekend flag, lags (1, 2, 24, 48, 168 h) and rolling statistics computed from past hours only (no leakage). The model predicts the *change* from a base lag (delta target). Compared against persistence and seasonal-naive baselines, plus XGBoost, LightGBM, HistGradientBoosting, Ridge and an LSTM.
+3. **Anomaly detection** – relative forecast residual with a robust (median/MAD) z-score. The threshold is calibrated on a **validation** period, not on the test set. Sensitivity `k` (default 5) is adjustable in the dashboard. Isolation Forest is used as a cross-check.
+4. **Weather experiment** – tested with and without weather on validation and test; not used in the final model (see results).
+5. **Dashboard (Streamlit)** – city/house/date selection, actual vs forecast, detected anomalies with a sensitivity slider, anomaly list, all-house comparison, usage patterns, and a live call to the API.
+6. **API (FastAPI)** – `/health`, `/predict` (1 h or 24 h ahead) and `/detect-anomaly`.
+7. **Experiment tracking (MLflow)** – baselines, Random Forest and XGBoost for both horizons are logged with parameters, metrics and the deployed model files, so all runs can be compared in one table.
 
-## Dataset
+## Screenshots
 
-**REWDP: Residential Energy and Weather Data Pakistan.** Minute-level smart-meter readings (total usage plus
-appliance-level channels such as AC, fridge, kitchen and washing machine) with matching weather data
-(temperature, humidity, wind speed, solar radiation).
+**Dashboard – forecast and anomalies**
+![Dashboard forecast](images/dashboard_forecast.png)
 
-- 18 houses, 3 per city, 6 cities
-- About one year of data per house (for House 38: Sept 2023 to Aug 2024)
-- The raw dataset is **not included** in this repository because of its size. Source: [LUMS Energy Institute, Residential Energy and Weather Data Pakistan](https://lei.lums.edu.pk/datasets/residential-energy-and-weather-data-pakistan.html)
+**Dashboard – live API demo**
+![Dashboard live API](images/dashboard_live_api.png)
 
-## Project pipeline
+**API documentation (Swagger)**
+![API docs](images/api_docs.png)
 
-| # | Notebook | What it does |
-|---|----------|--------------|
-| 00 | `00_raw_exploration` | First inspection of the raw files and their problems |
-| 01 | `01_data_cleaning_and_eda` | Fixes timestamps and sensor downtime, resamples to hourly, EDA |
-| 02 | `02_feature_engineering_and_baseline_model` | Features, chronological split, baselines, Random Forest |
-| 03 | `03_lstm_deep_learning_models` | Univariate and multivariate LSTM, compared on identical test hours |
-| 04 | `04_anomaly_detection` | Residual-based detection, sensitivity analysis, Isolation Forest cross-check |
-| 05 | `05_multi_city_comparative_analysis` | The same pipeline on all 18 houses |
-| 06 | `06_model_export_for_deployment` | Saves models and a deployment config; verifies inference from raw history |
-| 07 | `07_weather_enhanced_forecasting` | Tests whether weather features improve the forecast |
+**API prediction response**
+![API predict](images/api_predict.png)
 
-Notebooks 02, 03, 04 and 06 read files saved by earlier notebooks. Each has `IN_DIR` and `WORK_DIR` variables at
-the top (on Kaggle, attach the previous notebook's output as an input and set `IN_DIR` to it).
+**MLflow – run comparison (baselines, Random Forest, XGBoost, 1 h and 24 h)**
+![MLflow compare](images/mlflow_compare.png)
 
-## Methodology
+## Results (test period = last 20% of each house's data, chronological split 70/10/20)
 
-### 1. Data cleaning
-- **Duplicate timestamps:** the meter buffered readings during connection drops and dumped them under one
-  timestamp. Each run of identical timestamps is re-stamped one second apart, so nothing is dropped.
-- **Fake zero streaks:** runs of 10 or more zero-minutes are sensor downtime, not real zero usage, and are set to
-  missing. Keeping them would create false "drop to zero" anomalies.
-- **Hourly resampling:** hourly mean; hours with less than 30 valid minutes become missing. Gaps of up to 3 hours
-  are interpolated, longer gaps stay missing.
-- **`observed` flag:** marks real measured hours. Only observed hours are used as forecasting targets, so models
-  are never trained or scored on filled values.
+| City | nMAE day-ahead | Skill vs persistence (1 h) | Skill vs seasonal naive (day-ahead) | Anomaly rate (k = 5) |
+|---|---|---|---|---|
+| Multan | 0.336 | 0.081 | 0.082 | 2.1 % |
+| Lahore | 0.390 | 0.062 | 0.117 | 1.4 % |
+| Karachi | 0.424 | 0.013 | 0.074 | 0.7 % |
+| Islamabad | 0.476 | 0.036 | 0.022 | 1.0 % |
+| Peshawar | 0.505 | 0.090 | −0.038 | 1.9 % |
+| Skardu | 0.939 | −0.155 | 0.070 | 6.1 % |
 
-### 2. Feature engineering (no target leakage)
-- Calendar: hour, day of week, weekend flag (month is deliberately excluded, since with one year of data the test
-  months never appear in training).
-- Lags: 1, 2, 24, 48 and 168 hours.
-- Rolling mean and standard deviation of the last 24 hours, rolling mean of the last 168 hours, all computed on
-  past values only (`shift(1)`).
+*nMAE = MAE divided by the house's mean usage. Skill = 1 − MAE_model / MAE_baseline (0 = no better than the baseline, negative = worse).*
 
-### 3. Evaluation protocol
-- **Chronological split:** train 70%, validation 10%, test 20%. No random splitting.
-- **Baselines:** persistence (previous hour), seasonal naive 24 h, seasonal naive 168 h.
-- **Metrics:** MAE, RMSE, sMAPE, normalised MAE (MAE divided by mean usage), and a **skill score**
-  `1 - MAE_model / MAE_baseline` (0 = no better than the baseline, negative = worse).
+Key findings:
+- The delta Random Forest beats the seasonal-naive baseline for the day-ahead forecast in **13 of 18 houses** (average skill about 5 %); gains are modest.
+- At 1 hour ahead, **persistence is very hard to beat** (the model is better in 13 of 18 houses, by small margins).
+- Delta targets clearly outperform predicting the raw level; the LSTM did not beat the Random Forest.
+- **Weather** helped on both validation and test in only 7 of 18 houses and hurt others (up to −19 % in Karachi); choosing weather per house by validation gain gave a mean test change of about −0.65 %. It is therefore excluded from the final model.
+- Skardu is the hardest city (spiky usage, high nMAE and anomaly rate).
 
-### 4. Forecasting models
-- **Random Forest (delta target):** predicts the *change* from a base lag (`y - lag_1` for 1 h ahead,
-  `y - lag_24` for day-ahead) and adds the lag back. The day-ahead model only uses information known 24 hours
-  earlier.
-- **LSTM (univariate and multivariate):** 24-hour input windows; scaler fitted on the training period only;
-  early stopping on a separate validation period; compared with the Random Forest on the same test hours.
+## Limitations
 
-### 5. Anomaly detection
-- **Main method:** relative residual `(actual - predicted) / (predicted + eps)` converted to a robust z-score
-  (median and MAD). Flags `|z| > K` (default `K = 5`); positive z is a spike, negative z a drop.
-- **Threshold calibrated on the validation set**, not the test set, so the number of alerts is a real result and
-  not a fixed percentage by construction.
-- **Isolation Forest** is used as an unsupervised cross-check.
+- About one year of data per house; the test window is short and season-specific (mostly the school summer vacation, while training is mostly school term).
+- The detector finds point anomalies, not sustained level shifts (e.g. a house whose load drops ~80 % for weeks).
+- Anomalies are statistical outliers, not confirmed faults. Holidays such as Eid can look like anomalies.
+- Weather was tested with *observed* data; a real deployment would only have forecasts.
+- The deployed API serves the models of one house (Karachi_38) as a showcase.
 
-### 6. Weather experiment
-Weather features (temperature, humidity, wind speed, solar radiation) were added and tested in notebook 07. They
-did not help reliably, so they are not part of the final model.
+## Future work
 
-## Key findings
-
-- **Persistence is a very strong baseline at 1 hour ahead.** The last hour already explains most of the next one,
-  so a model must be judged against it.
-- **The Random Forest with the delta target beat the LSTM variants** and was selected as the final forecaster.
-  Engineered lag features carry most of the signal on this small tabular dataset.
-- **Gains are modest.** Day-ahead improvement over "same hour yesterday" is small on average and negative in some
-  houses, so results should not be oversold.
-- **Cities differ.** Houses with very spiky load (for example in Skardu) have higher normalised error and a higher
-  anomaly rate. The anomaly rate is not an accuracy score.
-- **Anomalies often fall on unusual days** (such as public holidays), which suggests a calendar feature could
-  reduce false alarms.
-- Weather features did not give a reliable improvement.
-
-> Add your own numbers here after running the notebooks, for example a small table of the final MAE, nMAE and skill
-> scores for House 38 and the best and worst cities from notebook 05.
-
-## Dashboard
-
-A Streamlit app (`app.py`) to explore results per house:
-
-- Choose city, house, anomaly threshold `k` and date range
-- Actual vs day-ahead forecast with anomalies highlighted
-- Sortable anomaly list with CSV download
-- Comparison table across all houses
-- Average usage by hour and by weekday
-
-It reads precomputed files from `artifacts/` (one CSV per house with columns
-`datetime, actual, predicted, z, forecast_24h`, plus `meta.json`), so no model loading is needed and it runs on any host.
+Multi-year data with calendar features (school terms, Ramadan, Eid, public holidays), change-point detection (e.g. CUSUM), rolling cross-validation, model monitoring and scheduled retraining, forecast-weather inputs.
 
 ## Repository structure
 
 ```
-.
-├── app.py                        # Streamlit dashboard
-├── artifacts/                    # per-house CSVs + meta.json (used by the dashboard)
-├── models/                       # exported .pkl models + deployment_config.json
-├── notebooks/                    # 00 to 07, with outputs
-├── requirements.txt              # dashboard dependencies
-├── requirements-notebooks.txt    # notebook dependencies (incl. TensorFlow)
-└── README.md
+app.py                 Streamlit dashboard (main page)
+pages/                 extra dashboard pages
+artifacts/             per-house predictions, z-scores and meta.json used by the dashboard
+requirements.txt       dashboard dependencies
+notebooks/             00 raw exploration, 01 cleaning & EDA, 02 features & baselines,
+                       03 LSTM, 04 anomaly detection, 05 multi-city study,
+                       06 model export, 07 weather experiment, 08 MLflow experiment tracking
 ```
+The API lives in its own repository (`main.py`, `requirements.txt` and the saved model files).
 
-## How to run
+## Run locally
 
-**Dashboard**
+Dashboard:
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-**Notebooks** (developed on Kaggle)
-1. `pip install -r requirements-notebooks.txt` for local use, or use Kaggle directly.
-2. Set `DATA_ROOT` (and `WEATHER_ROOT` for notebook 07) to your dataset location.
-3. Run notebooks in order 00 to 07, setting `IN_DIR` and `WORK_DIR` as described in each notebook's header.
-
-**Using a saved model**
-```python
-import joblib
-bundle = joblib.load("models/energy_forecast_24h.pkl")
-model, features, base = bundle["model"], bundle["features"], bundle["base"]
-# prediction = X[base] + model.predict(X[features])
+API:
+```bash
+pip install -r requirements.txt
+uvicorn main:app --reload      # then open http://127.0.0.1:8000/docs
 ```
-Each saved bundle contains the model together with its exact feature list, so the wrong columns cannot be fed in.
 
-## Limitations
 
-- About one year of data per house, so the model never sees the same season twice.
-- Test windows are short and mostly cover summer; results may not transfer to other seasons.
-- Anomalies are statistical outliers, not confirmed faults.
-- The detector targets point anomalies; sustained level shifts are not flagged.
-- Some houses have low data coverage (`pct_observed`) and their numbers are less reliable.
+## Tech stack
 
-## Future work
+Python, Pandas, NumPy, Matplotlib, Scikit-learn, XGBoost, LightGBM, TensorFlow/Keras, MLflow, FastAPI, Streamlit, Plotly, GitHub.
 
-- Add a public-holiday feature to reduce false alarms
-- Change-point detection (for example CUSUM) for sustained level shifts
-- Multi-year data to capture full seasonality
-- A single model trained across houses instead of one model per house
 
-## Group Member
+## Author
+
+Hacker (GitHub: [Baloxh-Aziz](https://github.com/Baloxh-Aziz)), BS Data Science, DUET Karachi. Built as the final project of the SMIT course.## Group Member
 
 `Azizullah Asad & Muhammad Yahya`
