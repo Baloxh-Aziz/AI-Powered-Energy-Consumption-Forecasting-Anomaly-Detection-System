@@ -1,4 +1,4 @@
-# ⚡ # AI-Powered Energy Consumption Forecasting & Anomaly Detection System
+# ⚡ AI-Powered Energy Consumption Forecasting & Anomaly Detection System
 
 An end-to-end project that cleans household smart-meter data, forecasts electricity usage, flags unusual consumption, and serves the results through an interactive dashboard and a prediction API.
 
