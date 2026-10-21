@@ -8,10 +8,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import requests
 import plotly.graph_objects as go
 import streamlit as st
 
 ART = Path(__file__).parent / "artifacts"
+API_URL = "https://energy-api-project-d1d7b.containers.snapdeploy.app"
 st.set_page_config(page_title="Household Energy Dashboard", page_icon="⚡", layout="wide")
 
 
@@ -35,7 +37,7 @@ def flag(df, k):
 
 meta = load_meta()
 
-st.title("⚡ AI-Powered Energy Consumption Forecasting & Anomaly Detection")
+st.title("⚡ Household Energy Forecasting & Anomaly Detection")
 st.caption("Pakistan REWDP dataset · Random Forest (delta) day-ahead forecast · "
            "robust (MAD) relative-residual anomaly detection")
 
@@ -63,7 +65,7 @@ c2.metric("Day-ahead MAE", f"{mae:.3f} kW", f"{100 * nmae:.1f}% of mean usage", 
 c3.metric("Anomalies", f"{int(df['anomaly'].sum())}", f"{100 * df['anomaly'].mean():.2f}% of hours", delta_color="off")
 c4.metric("Data observed", f"{m['pct_observed']}%")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Forecast & anomalies", "Anomaly list", "All houses", "Usage patterns"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Forecast & anomalies", "Anomaly list", "All houses", "Usage patterns", "Live API demo"])
 
 with tab1:
     fig = go.Figure()
@@ -111,11 +113,50 @@ with tab4:
     a2.subheader("Average usage by weekday")
     a2.bar_chart(dd)
 
+with tab5:
+    st.subheader("Live API demo")
+    st.write("This tab sends recent usage to the deployed FastAPI service and shows its forecast. "
+             "The deployed model was trained on **Karachi_38** only. "
+             "The free server sleeps when idle, so the first call can take about a minute.")
+
+    demo = load_house("Karachi_38")["actual"].asfreq("h")          # one row per hour, gaps = NaN
+    horizon = st.radio("Forecast horizon", ["1h", "24h"], horizontal=True)
+    steps = 1 if horizon == "1h" else 24
+
+    # a week (168 hours) of complete history must end `steps` hours before the target hour
+    complete = demo.notna().astype(int).rolling(168).sum() == 168
+    can_forecast = complete.shift(steps, freq="h")
+    targets = [t for t in can_forecast[can_forecast == True].index if t in demo.index and pd.notna(demo[t])]
+
+    if not targets:
+        st.warning("No hour with a full week of history was found.")
+    else:
+        target = st.selectbox("Hour to forecast", targets, index=len(targets) // 2)
+        if st.button("Call the API"):
+            end = target - pd.Timedelta(hours=steps)
+            history = demo.loc[end - pd.Timedelta(hours=167): end].tolist()
+            body = {"history": history, "target_time": str(target), "horizon": horizon}
+            try:
+                with st.spinner("Calling the API (it may need to wake up)..."):
+                    r = requests.post(API_URL + "/predict", json=body, timeout=120)
+                    r.raise_for_status()
+                    forecast = r.json()["forecast_kw"]
+                    shown = {"API forecast (kW)": round(forecast, 3), "Actual (kW)": round(float(demo[target]), 3)}
+                    if horizon == "1h":
+                        body2 = {"history": history, "target_time": str(target), "actual": float(demo[target])}
+                        r2 = requests.post(API_URL + "/detect-anomaly", json=body2, timeout=120)
+                        r2.raise_for_status()
+                        shown["Anomaly score (z)"] = r2.json()["z_score"]
+                        shown["Anomaly?"] = "Yes" if r2.json()["is_anomaly"] else "No"
+                cols = st.columns(len(shown))
+                for col, (name, value) in zip(cols, shown.items()):
+                    col.metric(name, value)
+            except Exception as e:
+                st.error(f"API call failed: {e}")
+
 with st.expander("Limitations"):
     st.markdown(
         "- About one year of data per house; the test period covers only part of the year.\n"
         "- Day-ahead skill over the seasonal-naive baseline is modest on average (~5%) and negative in some houses.\n"
         "- Anomalies are statistical outliers, not confirmed faults.\n"
         "- Weather was tested and did not help reliably, so it is not in the final model.")
-        "- The test window (8 Jun - 17 Aug 2024) is mostly the school summer vacation, while training data is mostly school term.\n"
-        "- Sustained level shifts (e.g. House 38 after 3 July) are not flagged; the detector targets point anomalies.\n"
