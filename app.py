@@ -117,3 +117,5 @@ with st.expander("Limitations"):
         "- Day-ahead skill over the seasonal-naive baseline is modest on average (~5%) and negative in some houses.\n"
         "- Anomalies are statistical outliers, not confirmed faults.\n"
         "- Weather was tested and did not help reliably, so it is not in the final model.")
+        "- The test window (8 Jun - 17 Aug 2024) is mostly the school summer vacation, while training data is mostly school term.\n"
+        "- Sustained level shifts (e.g. House 38 after 3 July) are not flagged; the detector targets point anomalies.\n"
