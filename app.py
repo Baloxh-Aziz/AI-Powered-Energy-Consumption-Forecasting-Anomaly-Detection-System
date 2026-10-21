@@ -115,9 +115,11 @@ with tab4:
 
 with tab5:
     st.subheader("Live API demo")
-    st.write("This tab sends recent usage to the deployed FastAPI service and shows its forecast. "
-             "The deployed model was trained on **Karachi_38** only. "
-             "The free server sleeps when idle, so the first call can take about a minute.")
+    st.write(
+    "Model: Karachi_38 dataset | "
+    "Powered by a deployed FastAPI prediction service. "
+    "The first request may take up to a minute to initialize."
+    )
 
     demo = load_house("Karachi_38")["actual"].asfreq("h")          # one row per hour, gaps = NaN
     horizon = st.radio("Forecast horizon", ["1h", "24h"], horizontal=True)
