@@ -6,12 +6,13 @@ An end-to-end project that cleans household smart-meter data, forecasts electric
 - [Prediction API (Swagger docs)](https://energy-api-project-d1d7b.containers.snapdeploy.app/docs)
 
 ## Data
+[Data source: REWDP (LUMS)](https://lei.lums.edu.pk/datasets/residential-energy-and-weather-data-pakistan.html)
 
 REWDP (Residential Energy and Weather Data, Pakistan): minute-level smart-meter readings for 18 houses in 6 cities (Karachi, Lahore, Peshawar, Multan, Skardu, Islamabad), about one year (Sept 2023 – Aug 2024), plus an hourly weather dataset for the same cities.
 
 The full dataset covers about 60 houses, each with 500k+ minute-level rows. Because of the heavy compute and memory load, 3 houses were selected from each city (18 houses in total) for modelling and evaluation.
 
-[Data source: REWDP (LUMS)](https://lei.lums.edu.pk/datasets/residential-energy-and-weather-data-pakistan.html)
+
 
 ## What the system does
 
